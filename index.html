@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notificação de Promoção por Local</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+  <header>
+    <h1>Alerta de cliente em rota</h1>
+    <p>Quando o cliente passar defronte ao comércio selecionado, enviaremos aviso por voz.</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <label for="clientSelect">Selecione o ponto comercial:</label>
+      <select id="clientSelect"></select>
+      <button id="testVoiceBtn">Testar Voz</button>
+      <p id="status">Aguardando permissão de geolocalização...</p>
+      <p id="distanceInfo"></p>
+    </section>
+
+    <section class="card">
+      <h3>Adicionar Novo Local</h3>
+      <form id="addClientForm">
+        <label for="clientName">Nome do Comércio:</label>
+        <input type="text" id="clientName" required placeholder="Ex: Restaurante do Fulano de Tal">
+
+        <label for="clientLat">Latitude:</label>
+        <input type="number" id="clientLat" step="0.000001" required placeholder="Ex: -23.5489">
+
+        <label for="clientLng">Longitude:</label>
+        <input type="number" id="clientLng" step="0.000001" required placeholder="Ex: -46.6388">
+
+        <label for="clientMessage">Mensagem de Voz:</label>
+        <textarea id="clientMessage" required placeholder="Ex: Venha aproveitar nossas ofertas especiais!"></textarea>
+
+        <button type="submit">Adicionar Local</button>
+      </form>
+    </section>
+
+    <div id="map"></div>
+
+    <section class="card" id="logCard">
+      <h2>Histórico de notificações</h2>
+      <ul id="logArea"></ul>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
