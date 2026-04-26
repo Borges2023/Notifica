@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administrador - Notifica</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+  <header>
+    <h1>Painel do Administrador</h1>
+    <p>Gerencie os pontos comerciais que enviarão notificações ao usuário no mapa.</p>
+  </header>
+
+  <main>
+    <section class="card" id="loginCard">
+      <h2>Login do administrador</h2>
+      <form id="loginForm">
+        <label for="username">Usuário</label>
+        <input type="text" id="username" required placeholder="" />
+
+        <label for="password">Senha</label>
+        <input type="password" id="password" required placeholder="" />
+
+        <button type="submit">Entrar</button>
+      </form>
+      <p id="loginError" class="error"></p>
+    </section>
+
+    <section class="card hidden" id="dashboardCard">
+      <div class="dashboard-header">
+        <div>
+          <h2>Dashboard do administrador</h2>
+          <p>Adicione empresas e mensagens que o usuário verá ao passar pelo ponto no mapa.</p>
+        </div>
+        <div class="dashboard-actions">
+          <a href="index.html" class="button small-button">Voltar</a>
+          <button id="logoutBtn" class="secondary">Sair</button>
+        </div>
+      </div>
+
+      <form id="addCompanyForm" class="grid-form">
+        <label for="companyName">Nome da empresa</label>
+        <input type="text" id="companyName" required placeholder="Ex: Restaurante do Fulano" />
+
+        <label for="companyLat">Latitude</label>
+        <input type="number" id="companyLat" step="0.000001" required placeholder="Ex: -23.5489" />
+
+        <label for="companyLng">Longitude</label>
+        <input type="number" id="companyLng" step="0.000001" required placeholder="Ex: -46.6388" />
+
+        <label for="companyMessage">Mensagem para o usuário</label>
+        <textarea id="companyMessage" required placeholder="Ex: Aproveite 15% de desconto agora!"></textarea>
+
+        <button type="submit">Adicionar empresa</button>
+      </form>
+
+      <section class="card small-card" id="companiesListCard">
+        <h3>Empresas cadastradas</h3>
+        <table id="companiesTable">
+          <thead>
+            <tr><th>Empresa</th><th>Lat</th><th>Lng</th><th>Mensagem</th><th>Ações</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section class="card" id="historyCard">
+        <div class="history-header">
+          <div>
+            <h3>Histórico de notificações do usuário</h3>
+            <p id="historyStatus" class="subtext">Carregando histórico...</p>
+          </div>
+          <div>
+            <button id="refreshHistoryBtn" class="secondary small-button">Atualizar</button>
+            <button id="clearHistoryBtn" class="secondary small-button">Limpar histórico</button>
+          </div>
+        </div>
+        <ul id="notificationHistory"></ul>
+      </section>
+
+      <section class="card">
+        <h3>Mapa de monitoramento</h3>
+        <div id="adminMap"></div>
+      </section>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
