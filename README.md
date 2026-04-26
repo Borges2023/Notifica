@@ -4,15 +4,20 @@ Projeto de notificação de proximidade com mapa, voz e fluxo de administração
 
 ## Páginas
 
-- `index.html` — página inicial com links para o painel de administrador e para a página do usuário.
-- `admin.html` — login de administrador e dashboard para inserir empresas, mensagens e gerenciar pontos no mapa.
-- `user.html` — visualização do mapa para o usuário, seleção de empresa e recebimento de notificações por proximidade.
+- `index.html` — página principal do usuário.
+- `admin.html` — painel do administrador para cadastrar empresas e ver histórico de notificações.
+- `user.html` — redireciona para `index.html`.
+
+## GitHub Pages
+
+O site está publicado em:
+
+- `https://borges2023.github.io/Notifica/`
 
 ## Credenciais administrativas
-## Usuário a Usar
+## Usuário a usar o sistema
 
-
-## Como rodar
+## Como rodar localmente
 
 Execute um servidor local na pasta do projeto, por exemplo:
 
