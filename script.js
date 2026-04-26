@@ -4,6 +4,9 @@ const notifyDistanceMeters = 150;
 let companies = [];
 let map;
 let userMarker;
+let selectedDestination = null;
+let destinationMarker = null;
+let destinationLine = null;
 let notifiedSet = new Set();
 let markers = [];
 
@@ -66,6 +69,112 @@ function resolveCompanies() {
   return stored.length ? stored : getDefaultCompanies();
 }
 
+function bindDestinationForm() {
+  const button = document.getElementById('searchDestinationBtn');
+  const input = document.getElementById('destinationInput');
+
+  button.addEventListener('click', () => {
+    const query = input.value.trim();
+    if (!query) {
+      updateStatus('Digite um destino para buscar no mapa.');
+      return;
+    }
+    searchDestination(query);
+  });
+
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      button.click();
+    }
+  });
+}
+
+function searchDestination(query) {
+  const formattedQuery = encodeURIComponent(query);
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${formattedQuery}&limit=5&addressdetails=1`;
+
+  updateStatus('Buscando destino...');
+  fetch(url, { headers: { 'Accept': 'application/json' } })
+    .then((response) => response.json())
+    .then((results) => {
+      if (!results.length) {
+        updateStatus('Destino não encontrado. Tente outro endereço.');
+        renderDestinationResults([]);
+        return;
+      }
+      renderDestinationResults(results);
+      updateStatus(`Selecione um destino encontrado para traçar a rota.`);
+    })
+    .catch(() => {
+      updateStatus('Erro ao buscar destino. Verifique sua conexão.');
+    });
+}
+
+function renderDestinationResults(results) {
+  const list = document.getElementById('destinationResults');
+  list.innerHTML = '';
+
+  if (!results.length) {
+    return;
+  }
+
+  results.forEach((place) => {
+    const item = document.createElement('li');
+    item.textContent = place.display_name;
+    item.addEventListener('click', () => selectDestination(place));
+    list.appendChild(item);
+  });
+}
+
+function selectDestination(place) {
+  const lat = Number(place.lat);
+  const lon = Number(place.lon);
+  selectedDestination = {
+    lat,
+    lng: lon,
+    label: place.display_name
+  };
+
+  if (destinationMarker) {
+    destinationMarker.remove();
+  }
+
+  destinationMarker = L.marker([lat, lon], {
+    icon: L.icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    })
+  }).addTo(map).bindPopup(`<strong>Destino</strong><br>${place.display_name}`).openPopup();
+
+  if (destinationLine) {
+    destinationLine.remove();
+  }
+
+  document.getElementById('destinationResults').innerHTML = '';
+  updateStatus(`Destino definido: ${place.display_name}`);
+  updateDistanceDisplay(userMarker ? userMarker.getLatLng() : null);
+}
+
+function updateDestinationRoute(coords) {
+  if (!selectedDestination || !coords) return;
+
+  const latLngs = [
+    [coords.lat, coords.lng],
+    [selectedDestination.lat, selectedDestination.lng]
+  ];
+
+  if (destinationLine) {
+    destinationLine.setLatLngs(latLngs);
+  } else {
+    destinationLine = L.polyline(latLngs, { color: '#1976d2', weight: 4, opacity: 0.7 }).addTo(map);
+  }
+}
+
 function initMap() {
   companies = resolveCompanies();
   const center = [companies[0].lat, companies[0].lng];
@@ -76,6 +185,7 @@ function initMap() {
   }).addTo(map);
 
   drawAllCompanyMarkers();
+  bindDestinationForm();
   requestPermissions();
 }
 
@@ -136,6 +246,7 @@ function initGeolocation() {
 
       map.panTo([coords.lat, coords.lng]);
       checkProximity(coords);
+      updateDestinationRoute(coords);
       updateDistanceDisplay(coords);
     },
     (error) => {
@@ -198,6 +309,11 @@ function updateStatus(message) {
 }
 
 function updateDistanceDisplay(coords) {
+  if (!coords) {
+    document.getElementById('distanceInfo').textContent = '';
+    return;
+  }
+
   const nearbyCompanies = companies
     .map((company) => ({
       name: company.name,
@@ -208,9 +324,15 @@ function updateDistanceDisplay(coords) {
   const statusText = `Sua posição: ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`;
   updateStatus(statusText);
 
-  const distanceText = nearbyCompanies
+  let distanceText = nearbyCompanies
     .map((c) => `${c.name}: ${c.distance.toFixed(0)} m`)
     .join(' | ');
+
+  if (selectedDestination) {
+    const destinationDistance = calculateDistance(coords.lat, coords.lng, selectedDestination.lat, selectedDestination.lng);
+    distanceText = `Destino: ${selectedDestination.label} (${destinationDistance.toFixed(0)} m)` + (distanceText ? ` | ${distanceText}` : '');
+  }
+
   document.getElementById('distanceInfo').textContent = distanceText;
 }
 

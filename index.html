@@ -22,6 +22,14 @@
 
   <main>
     <section class="card">
+      <div class="destination-form">
+        <label for="destinationInput">Para onde você quer ir?</label>
+        <div class="destination-controls">
+          <input id="destinationInput" type="text" placeholder="Digite um endereço, ponto turístico ou destino..." />
+          <button id="searchDestinationBtn" type="button">Buscar destino</button>
+        </div>
+        <ul id="destinationResults"></ul>
+      </div>
       <p id="status">Aguardando permissão de geolocalização...</p>
       <p id="distanceInfo"></p>
     </section>

@@ -23,6 +23,13 @@ label, select { display: block; margin-bottom: 8px; }
 button, .small-delete, #logoutBtn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; background: #2196f3; color: white; border: none; border-radius: 6px; cursor: pointer; transition: background .2s ease; }
 button:hover, .small-delete:hover, #logoutBtn:hover { background: #1976d2; }
 .small-delete { background: #e53935; margin: 0; }
+.destination-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.destination-controls { display: flex; gap: 10px; flex-wrap: wrap; }
+.destination-controls input { flex: 1 1 220px; }
+#destinationResults { list-style: none; margin: 0; padding: 0; max-height: 180px; overflow-y: auto; background: #fafafa; border: 1px solid #ddd; border-radius: 8px; }
+#destinationResults li { padding: 10px 12px; border-bottom: 1px solid #eee; cursor: pointer; }
+#destinationResults li:hover { background: #f0f4ff; }
+#destinationResults li:last-child { border-bottom: none; }
 .small-delete:hover { background: #c62828; }
 button.secondary { background: #4caf50; }
 button.secondary:hover { background: #388e3c; }
