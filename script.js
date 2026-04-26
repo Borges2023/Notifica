@@ -4,7 +4,6 @@ const notifyDistanceMeters = 150;
 let companies = [];
 let map;
 let userMarker;
-let selectedCompany;
 let notifiedSet = new Set();
 let markers = [];
 
@@ -69,51 +68,27 @@ function resolveCompanies() {
 
 function initMap() {
   companies = resolveCompanies();
-  selectedCompany = companies[0];
-  const center = [selectedCompany.lat, selectedCompany.lng];
+  const center = [companies[0].lat, companies[0].lng];
 
   map = L.map('map').setView(center, 15);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
   }).addTo(map);
 
-  renderCompanyOptions();
   drawAllCompanyMarkers();
   requestPermissions();
 }
 
-function renderCompanyOptions() {
-  const select = document.getElementById('companySelect');
-  select.innerHTML = '';
 
-  companies.forEach((company) => {
-    const option = document.createElement('option');
-    option.value = company.id;
-    option.textContent = company.name;
-    select.appendChild(option);
-  });
-
-  select.addEventListener('change', (event) => {
-    selectedCompany = companies.find((item) => item.id === Number(event.target.value));
-    drawAllCompanyMarkers();
-    updateStatus(`Empresa selecionada: ${selectedCompany.name}`);
-  });
-
-  select.value = selectedCompany.id;
-}
 
 function drawAllCompanyMarkers() {
   markers.forEach((marker) => marker.remove());
   markers = [];
 
   companies.forEach((company) => {
-    const iconUrl = company.id === selectedCompany.id
-      ? 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png'
-      : 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png';
-
     const marker = L.marker([company.lat, company.lng], {
       icon: L.icon({
-        iconUrl,
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
         iconSize: [25, 41],
         iconAnchor: [12, 41],
@@ -161,7 +136,7 @@ function initGeolocation() {
 
       map.panTo([coords.lat, coords.lng]);
       checkProximity(coords);
-      updateStatus(`Sua posição: ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}. Distância até ${selectedCompany.name}: ${distanceToSelected(coords).toFixed(0)} m.`);
+      updateDistanceDisplay(coords);
     },
     (error) => {
       updateStatus(`Erro ao obter localização: ${error.message}`);
@@ -170,28 +145,26 @@ function initGeolocation() {
   );
 }
 
-function distanceToSelected(coords) {
-  return calculateDistance(coords.lat, coords.lng, selectedCompany.lat, selectedCompany.lng);
-}
-
 function checkProximity(coords) {
-  const distance = distanceToSelected(coords);
-  if (distance <= notifyDistanceMeters && !notifiedSet.has(selectedCompany.id)) {
-    notifiedSet.add(selectedCompany.id);
-    const message = `${selectedCompany.name}: ${selectedCompany.message}`;
-    speakMessage(message);
-    sendBrowserNotification('Você está próximo ao ponto selecionado', message);
-    const entry = {
-      companyId: selectedCompany.id,
-      companyName: selectedCompany.name,
-      message: selectedCompany.message,
-      timestamp: new Date().toISOString()
-    };
-    saveNotificationHistory(entry);
-  } else if (distance > notifyDistanceMeters && notifiedSet.has(selectedCompany.id)) {
-    notifiedSet.delete(selectedCompany.id);
-    log(`Saiu da área de proximidade de ${selectedCompany.name}.`);
-  }
+  companies.forEach((company) => {
+    const distance = calculateDistance(coords.lat, coords.lng, company.lat, company.lng);
+    if (distance <= notifyDistanceMeters && !notifiedSet.has(company.id)) {
+      notifiedSet.add(company.id);
+      const message = `${company.name}: ${company.message}`;
+      speakMessage(message);
+      sendBrowserNotification('Você está próximo de um ponto comercial', message);
+      const entry = {
+        companyId: company.id,
+        companyName: company.name,
+        message: company.message,
+        timestamp: new Date().toISOString()
+      };
+      saveNotificationHistory(entry);
+    } else if (distance > notifyDistanceMeters && notifiedSet.has(company.id)) {
+      notifiedSet.delete(company.id);
+      log(`Saiu da área de proximidade de ${company.name}.`);
+    }
+  });
 }
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -222,6 +195,23 @@ function sendBrowserNotification(title, body) {
 
 function updateStatus(message) {
   document.getElementById('status').textContent = message;
+}
+
+function updateDistanceDisplay(coords) {
+  const nearbyCompanies = companies
+    .map((company) => ({
+      name: company.name,
+      distance: calculateDistance(coords.lat, coords.lng, company.lat, company.lng)
+    }))
+    .sort((a, b) => a.distance - b.distance);
+
+  const statusText = `Sua posição: ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`;
+  updateStatus(statusText);
+
+  const distanceText = nearbyCompanies
+    .map((c) => `${c.name}: ${c.distance.toFixed(0)} m`)
+    .join(' | ');
+  document.getElementById('distanceInfo').textContent = distanceText;
 }
 
 function log(message) {
