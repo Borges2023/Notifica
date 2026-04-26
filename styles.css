@@ -20,8 +20,8 @@ label, select { display: block; margin-bottom: 8px; }
 #logArea li, #companyList li { margin: 6px 0; border-bottom: 1px solid #eee; padding-bottom: 6px; font-size: 0.95rem; }
 @media (max-width: 800px) { #map, #adminMap { height: 320px; } }
 
-#testVoiceBtn, button, .small-delete, #logoutBtn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; background: #2196f3; color: white; border: none; border-radius: 6px; cursor: pointer; transition: background .2s ease; }
-#testVoiceBtn:hover, button:hover, .small-delete:hover, #logoutBtn:hover { background: #1976d2; }
+button, .small-delete, #logoutBtn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; background: #2196f3; color: white; border: none; border-radius: 6px; cursor: pointer; transition: background .2s ease; }
+button:hover, .small-delete:hover, #logoutBtn:hover { background: #1976d2; }
 .small-delete { background: #e53935; margin: 0; }
 .small-delete:hover { background: #c62828; }
 button.secondary { background: #4caf50; }

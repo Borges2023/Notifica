@@ -100,12 +100,6 @@ function renderCompanyOptions() {
   });
 
   select.value = selectedCompany.id;
-
-  document.getElementById('testVoiceBtn').addEventListener('click', () => {
-    if (!selectedCompany) return;
-    speakMessage(selectedCompany.message);
-    log(`Teste de voz: ${selectedCompany.name}`);
-  });
 }
 
 function drawAllCompanyMarkers() {
