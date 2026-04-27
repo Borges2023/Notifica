@@ -30,6 +30,7 @@ button:hover, .small-delete:hover, #logoutBtn:hover { background: #1976d2; }
 #destinationResults li { padding: 10px 12px; border-bottom: 1px solid #eee; cursor: pointer; }
 #destinationResults li:hover { background: #f0f4ff; }
 #destinationResults li:last-child { border-bottom: none; }
+#routeInfo { margin-top: 8px; font-weight: 600; color: #1565c0; }
 .small-delete:hover { background: #c62828; }
 button.secondary { background: #4caf50; }
 button.secondary:hover { background: #388e3c; }

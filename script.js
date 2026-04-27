@@ -4,9 +4,11 @@ const notifyDistanceMeters = 150;
 let companies = [];
 let map;
 let userMarker;
+let currentUserCoords = null;
 let selectedDestination = null;
 let destinationMarker = null;
-let destinationLine = null;
+let routeLayer = null;
+let lastRouteCoords = null;
 let notifiedSet = new Set();
 let markers = [];
 
@@ -88,6 +90,11 @@ function bindDestinationForm() {
       button.click();
     }
   });
+
+  const testBtn = document.getElementById('testNotificationBtn');
+  testBtn.addEventListener('click', () => {
+    testProximityNotification();
+  });
 }
 
 function searchDestination(query) {
@@ -151,28 +158,102 @@ function selectDestination(place) {
     })
   }).addTo(map).bindPopup(`<strong>Destino</strong><br>${place.display_name}`).openPopup();
 
-  if (destinationLine) {
-    destinationLine.remove();
+  if (routeLayer) {
+    routeLayer.remove();
+    routeLayer = null;
   }
 
   document.getElementById('destinationResults').innerHTML = '';
   updateStatus(`Destino definido: ${place.display_name}`);
-  updateDistanceDisplay(userMarker ? userMarker.getLatLng() : null);
+  updateRouteInfo('Calculando melhor rota...');
+  if (currentUserCoords) {
+    requestRoute(currentUserCoords, selectedDestination);
+  } else {
+    map.panTo([lat, lon]);
+  }
+  updateDistanceDisplay(currentUserCoords);
 }
 
 function updateDestinationRoute(coords) {
   if (!selectedDestination || !coords) return;
+  if (!lastRouteCoords || calculateDistance(coords.lat, coords.lng, lastRouteCoords.lat, lastRouteCoords.lng) > 50) {
+    requestRoute(coords, selectedDestination);
+  }
+}
+
+function requestRoute(startCoords, destination) {
+  if (!startCoords || !destination) return;
+
+  const source = `${startCoords.lng},${startCoords.lat}`;
+  const target = `${destination.lng},${destination.lat}`;
+  const url = `https://router.project-osrm.org/route/v1/driving/${source};${target}?overview=full&geometries=geojson&steps=true&annotations=duration,distance`;
+
+  fetch(url)
+    .then((response) => response.json())
+    .then((data) => {
+      if (!data.routes || data.code !== 'Ok' || !data.routes.length) {
+        throw new Error('Rota não encontrada');
+      }
+
+      const route = data.routes[0];
+      renderRoutePath(route.geometry);
+      updateRouteInfo(`Rota: ${route.distance.toFixed(0)} m • ${formatDuration(route.duration)}`);
+      updateStatus(`Rota pronta para ${destination.label}`);
+      lastRouteCoords = { ...startCoords };
+    })
+    .catch(() => {
+      drawDirectLine(startCoords, destination);
+      updateRouteInfo('Não foi possível calcular a rota detalhada. Traçado linha direta.');
+      updateStatus(`Destino definido: ${destination.label}`);
+    });
+}
+
+function renderRoutePath(geojson) {
+  if (routeLayer) {
+    routeLayer.remove();
+  }
+
+  routeLayer = L.geoJSON(geojson, {
+    style: {
+      color: '#1976d2',
+      weight: 5,
+      opacity: 0.8
+    }
+  }).addTo(map);
+
+  map.fitBounds(routeLayer.getBounds().pad(0.2));
+}
+
+function drawDirectLine(startCoords, destination) {
+  if (routeLayer) {
+    routeLayer.remove();
+  }
 
   const latLngs = [
-    [coords.lat, coords.lng],
-    [selectedDestination.lat, selectedDestination.lng]
+    [startCoords.lat, startCoords.lng],
+    [destination.lat, destination.lng]
   ];
 
-  if (destinationLine) {
-    destinationLine.setLatLngs(latLngs);
-  } else {
-    destinationLine = L.polyline(latLngs, { color: '#1976d2', weight: 4, opacity: 0.7 }).addTo(map);
+  routeLayer = L.polyline(latLngs, { color: '#1976d2', weight: 4, opacity: 0.7, dashArray: '6, 8' }).addTo(map);
+  map.fitBounds(routeLayer.getBounds().pad(0.2));
+}
+
+function updateRouteInfo(message) {
+  const info = document.getElementById('routeInfo');
+  if (info) {
+    info.textContent = message;
   }
+}
+
+function formatDuration(seconds) {
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) {
+    return `${minutes} min`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return `${hours}h ${remainder} min`;
 }
 
 function initMap() {
@@ -209,6 +290,23 @@ function drawAllCompanyMarkers() {
 
     markers.push(marker);
   });
+}
+
+function testProximityNotification() {
+  if (!companies.length) {
+    updateStatus('Nenhuma empresa cadastrada para testar.');
+    return;
+  }
+
+  const testCompany = companies[0];
+  const testCoords = {
+    lat: testCompany.lat + 0.0001, // Simula estar muito próximo (cerca de 10m)
+    lng: testCompany.lng + 0.0001
+  };
+
+  updateStatus(`Testando notificação para ${testCompany.name}...`);
+  checkProximity(testCoords);
+  updateDistanceDisplay(testCoords);
 }
 
 function requestPermissions() {
@@ -257,8 +355,10 @@ function initGeolocation() {
 }
 
 function checkProximity(coords) {
+  console.log('Verificando proximidade para coords:', coords);
   companies.forEach((company) => {
     const distance = calculateDistance(coords.lat, coords.lng, company.lat, company.lng);
+    console.log(`Distância para ${company.name}: ${distance.toFixed(0)}m`);
     if (distance <= notifyDistanceMeters && !notifiedSet.has(company.id)) {
       notifiedSet.add(company.id);
       const message = `${company.name}: ${company.message}`;
@@ -271,6 +371,7 @@ function checkProximity(coords) {
         timestamp: new Date().toISOString()
       };
       saveNotificationHistory(entry);
+      console.log('Notificação enviada para:', company.name);
     } else if (distance > notifyDistanceMeters && notifiedSet.has(company.id)) {
       notifiedSet.delete(company.id);
       log(`Saiu da área de proximidade de ${company.name}.`);
